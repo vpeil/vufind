@@ -34,8 +34,12 @@ namespace VuFindTest\ILS\Driver;
 use VuFind\I18n\TranslatableString;
 use VuFind\ILS\Driver\Alma;
 
+use function file_put_contents;
 use function func_get_args;
 use function is_array;
+use function sys_get_temp_dir;
+use function tempnam;
+use function unlink;
 
 /**
  * Alma ILS driver test.
@@ -50,6 +54,7 @@ use function is_array;
 class AlmaTest extends \VuFindTest\Unit\ILSDriverTestCase
 {
     use \VuFindTest\Feature\FixtureTrait;
+    use \VuFindTest\Feature\ReflectionTrait;
 
     /**
      * Default test configuration.
@@ -92,6 +97,31 @@ class AlmaTest extends \VuFindTest\Unit\ILSDriverTestCase
     public function setUp(): void
     {
         $this->driver = new Alma(new \VuFind\Date\Converter());
+    }
+
+    /**
+     * Test that API key can be read from a configured secret file.
+     *
+     * @return void
+     */
+    public function testApiKeyFile(): void
+    {
+        $apiKeyFile = tempnam(sys_get_temp_dir(), 'alma_api_key_');
+        $this->assertNotFalse($apiKeyFile);
+        file_put_contents($apiKeyFile, "file-key123\n");
+        try {
+            $config = $this->defaultDriverConfig;
+            $config['Catalog']['apiKey'] = 'inline-key';
+            $config['Catalog']['apiKey_file'] = $apiKeyFile;
+            $this->driver->setConfig($config);
+            $this->driver->init();
+            $this->assertSame(
+                'file-key123',
+                $this->getProperty($this->driver, 'apiKey')
+            );
+        } finally {
+            unlink($apiKeyFile);
+        }
     }
 
     /**

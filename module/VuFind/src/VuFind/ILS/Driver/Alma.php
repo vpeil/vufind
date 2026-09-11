@@ -31,6 +31,7 @@ namespace VuFind\ILS\Driver;
 
 use Laminas\Http\Headers;
 use SimpleXMLElement;
+use VuFind\Config\Feature\SecretTrait;
 use VuFind\Exception\ILS as ILSException;
 use VuFind\I18n\TranslatableString;
 use VuFind\I18n\Translator\TranslatorAwareInterface;
@@ -57,6 +58,7 @@ class Alma extends AbstractBase implements
     \Psr\Log\LoggerAwareInterface,
     TranslatorAwareInterface
 {
+    use SecretTrait;
     use \VuFindHttp\HttpServiceAwareTrait;
     use \VuFind\Log\LoggerAwareTrait;
     use \VuFind\Cache\CacheTrait;
@@ -115,7 +117,7 @@ class Alma extends AbstractBase implements
             throw new ILSException('Configuration needs to be set.');
         }
         $this->baseUrl = $this->config['Catalog']['apiBaseUrl'];
-        $this->apiKey = $this->config['Catalog']['apiKey'];
+        $this->apiKey = $this->getSecretFromConfig($this->config['Catalog'], 'apiKey');
 
         if (!empty($this->config['Holdings']['locationTypeItemStatus'])) {
             $this->locationTypeToItemStatus
